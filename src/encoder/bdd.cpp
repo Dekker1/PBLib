@@ -189,18 +189,27 @@ int32_t BDD_Encoder::buildBDD(int index, int64_t currentsum, int64_t maxsum,
     return nodeHistory[make_tuple(inputVars[index].lit, high, low)];
 
   int32_t node;
-
-  if (high == -true_lit && low == true_lit) {
-    node = -inputVars[index].lit;
-  } else {
+  if (reified) {
     node = auxvars.getVariable();
+    // or low is true, or this var is true, or this node is false
+    formula.addClause(low, inputVars[index].lit, -node);
 
-    if (low != true_lit) formula.addClause(low, -node);
+    // or high is true, or this var is false, or this node is false
+    formula.addClause(high, -inputVars[index].lit, -node);
+  } else {
+    if (high == -true_lit && low == true_lit) {
+      node = -inputVars[index].lit;
+    } else {
+      node = auxvars.getVariable();
 
-    if (high == -true_lit)
-      formula.addClause(-inputVars[index].lit, -node);
-    else
-      formula.addClause(high, -inputVars[index].lit, -node);
+      // if low is not true, then if node then low
+      if (low != true_lit) formula.addClause(low, -node);
+
+      if (high == -true_lit)
+        formula.addClause(-inputVars[index].lit, -node);
+      else
+        formula.addClause(high, -inputVars[index].lit, -node);
+    }
   }
 
   sumHistory[pair<int32_t, int64_t>(inputVars[index].lit, currentsum)] = node;
@@ -254,8 +263,13 @@ void BDD_Encoder::bddEncode(const SimplePBConstraint& pbconstraint,
 
   sort(inputVars.begin(), inputVars.end(), WeightedLit::compVariable_des);
 
-  true_lit = auxvars.getVariable();
-  formula.addClause(true_lit);
+  if (pbconstraint.getReification()) {
+    true_lit = pbconstraint.getReification();
+    reified = true;
+  } else {
+    true_lit = auxvars.getVariable();
+    reified = false;
+  }
 
   if (config->use_recursive_bdd_test && noLimit &&
       pbconstraint.getComparator() ==

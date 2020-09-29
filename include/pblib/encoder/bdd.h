@@ -41,6 +41,7 @@ private:
 
   int64_t k;
   int32_t true_lit;
+  bool reified = false;
 
   int32_t test_counter = 0;
 
