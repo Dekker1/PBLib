@@ -17,7 +17,8 @@ private:
   void remove_lits_with_w_greater_leq_and_check_isamk(ClauseDatabase& formula);
   template <class PBCon>
   void init_and_normalize(PBCon const& pbconstraint, ClauseDatabase& formula);
-  void check_for_trivial_constraints(ClauseDatabase& formula);
+  void check_for_trivial_constraints(ClauseDatabase& formula,
+                                     int32_t reification = 0);
   void sort_literals();
 
   std::vector<PBLib::WeightedLit> literals;

@@ -11,10 +11,18 @@ void PBConstraint::addConditionals(vector<int32_t> lits) {
   for (int32_t lit : lits) conditionals.push_back(lit);
 }
 
+void PBConstraint::setReification(int32_t lit) {
+  reification = lit;
+}
+
 void PBConstraint::clearConditionals() { conditionals.clear(); }
 
 const vector<int32_t>& PBConstraint::getConditionals() const {
   return conditionals;
+}
+
+const int32_t PBConstraint::getReification() const {
+  return reification;
 }
 
 int PBConstraint::getN() const { return weighted_literals.size(); }
@@ -123,6 +131,11 @@ void PBConstraint::print(bool errStream) const {
       cerr << "] => ";
     else
       cout << "] => ";
+  }
+
+  if (reification) {
+    auto & stream = errStream ? cerr : cout;
+    cerr << reification << " <-> " ;
   }
 
   for (int i = 0; i < getN(); ++i) {

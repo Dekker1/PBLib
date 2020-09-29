@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "pblib/weightedlit.h"
+
 using namespace PBLib;
 using namespace std;
 template <class PBCon>
@@ -119,16 +121,30 @@ void PreEncoder::join_duplicat_literals() {
   }
 }
 
-void PreEncoder::check_for_trivial_constraints(ClauseDatabase& formula) {
+void PreEncoder::check_for_trivial_constraints(ClauseDatabase& formula,
+                                               int32_t reification) {
   assert(literals.size() == n);
 
   if (leq < 0 || (comparator == BOTH && leq < geq) ||
       (comparator == BOTH && max_sum < geq)) {
     type = DONTCARE;
-    formula.addUnsat();
+
+    if (reification) {
+      formula.addClause(-reification);
+    } else {
+      formula.addUnsat();
+    }
     stats->num_trivial++;
   } else if (n == 0) {
-    if (comparator == BOTH && geq > 0) formula.addUnsat();
+    if (comparator == BOTH && geq > 0) {
+      if (reification) {
+        formula.addClause(-reification);
+      } else {
+        formula.addUnsat();
+      }
+    } else if (reification) {
+      formula.addClause(reification);
+    }
 
     type = DONTCARE;
     stats->num_trivial++;
@@ -140,8 +156,23 @@ void PreEncoder::check_for_trivial_constraints(ClauseDatabase& formula) {
     // == 0
     type = DONTCARE;
     stats->num_trivial++;
-    for (int i = 0; i < (int)literals.size(); ++i) {
-      formula.addClause(-literals[i].lit);
+
+    if (reification) {
+      clause.clear();
+      for (WeightedLit lit : literals) {
+        formula.addClause(-lit.lit, -reification);
+        stats->num_clause++;
+        clause.push_back(lit.lit);
+      }
+
+      clause.push_back(reification);
+      formula.addClause(clause);
+      stats->num_clause++;
+    } else {
+      for (WeightedLit lit : literals) {
+        formula.addClause(-lit.lit);
+        stats->num_clause++;
+      }
     }
     literals.clear();
     n = 0;
@@ -212,31 +243,52 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
     const PBConstraint& pbconstraint, ClauseDatabase& formula) {
   formula.addConditionals(pbconstraint.getConditionals());
   init_and_normalize(pbconstraint, formula);
-  check_for_trivial_constraints(formula);
-
-  if (type == DONTCARE)
-    ;  // we already encode this constraint and continue below
-  else if (comparator == BOTH &&
-           geq == max_sum)  // note that the following trivial constraints
-                            // cannot used for incremental constraints
+  check_for_trivial_constraints(formula, pbconstraint.getReification());
+  if (type == DONTCARE) {
+    // we already encode this constraint and continue below
+  } else if (comparator == BOTH &&
+             geq == max_sum)  // note that the following trivial constraints
+                              // cannot used for incremental constraints
   {
     // set all literals to true to satisfied == 0
     type = DONTCARE;
     stats->num_trivial++;
-    for (int i = 0; i < (int)literals.size(); ++i) {
-      formula.addClause(literals[i].lit);
+    if (pbconstraint.getReification()) {
+      clause.clear();
+
+      for (WeightedLit lit : literals) {
+        formula.addClause(lit.lit, -pbconstraint.getReification());
+        clause.push_back(lit.lit);
+        stats->num_clause++;
+      }
+      clause.push_back(pbconstraint.getReification());
+      formula.addClause(clause);
+    } else {
+      for (WeightedLit lit : literals) {
+        formula.addClause(lit.lit);
+        stats->num_clause++;
+      }
     }
+
   } else if (max_sum <= leq) {
     if (comparator == LEQ) {
       stats->num_trivial++;
       type = DONTCARE;
+      if (pbconstraint.getReification()) {
+        formula.addClause(pbconstraint.getReification());
+      }
     } else {
       assert(comparator == BOTH);
+      // TODO add copy constructor?
       PBConstraint c(literals, GEQ, geq);
       c.addConditionals(pbconstraint.getConditionals());
 
       for (int i = 0; i < pbconstraint.getConditionals().size(); ++i)
         formula.getConditionals().pop_back();
+
+      if (pbconstraint.getReification()) {
+        c.setReification(pbconstraint.getReification());
+      }
 
       return preEncodePBConstraint(c, formula);
     }
@@ -246,9 +298,19 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
     type = DONTCARE;
     clause.clear();
 
-    for (int i = 0; i < (int)literals.size(); ++i) {
-      clause.push_back(-literals[i].lit);
+    if (pbconstraint.getReification()) {
+      for (WeightedLit lit : literals) {
+        clause.push_back(-lit.lit);
+        formula.addClause(lit.lit, pbconstraint.getReification());
+      }
+      clause.push_back(-pbconstraint.getReification());
+      stats->num_clause++;
+    } else {
+      for (WeightedLit lit : literals) {
+        clause.push_back(-lit.lit);
+      }
     }
+
     formula.addClause(clause);
     stats->num_clause++;
   } else {
@@ -270,6 +332,10 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
       // we have changed k so we have to readjust the variables
       PBConstraint c(literals, BOTH, leq, geq);
       c.addConditionals(pbconstraint.getConditionals());
+
+      if (pbconstraint.getReification()) {
+        c.setReification(pbconstraint.getReification());
+      }
 
       for (int i = 0; i < pbconstraint.getConditionals().size(); ++i)
         formula.getConditionals().pop_back();
@@ -300,6 +366,10 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
 
       for (int i = 0; i < pbconstraint.getConditionals().size(); ++i)
         formula.getConditionals().pop_back();
+
+      if (pbconstraint.getReification()) {
+        c.setReification(pbconstraint.getReification());
+      }
 
       return preEncodePBConstraint(c, formula);
     }
@@ -340,14 +410,28 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
   for (int i = 0; i < pbconstraint.getConditionals().size(); ++i)
     formula.getConditionals().pop_back();
 
+  // TODO although probably we can use our pb reif trick for amo/amk too
+  if (pbconstraint.getReification()) {
+    type = PB;
+  }
+
   if (comparator == LEQ) {
     SimplePBConstraint sc(max_sum, max_weight, type, literals, comparator, leq);
     sc.addConditionals(pbconstraint.getConditionals());
+
+    if (pbconstraint.getReification()) {
+      sc.setReification(pbconstraint.getReification());
+    }
+
     return sc;
   } else {
     SimplePBConstraint sc(max_sum, max_weight, type, literals, comparator, leq,
                           geq);
     sc.addConditionals(pbconstraint.getConditionals());
+
+    if (pbconstraint.getReification()) {
+      sc.setReification(pbconstraint.getReification());
+    }
     return sc;
   }
 }

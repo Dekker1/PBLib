@@ -19,6 +19,7 @@ protected:
   std::vector<PBLib::WeightedLit> weighted_literals;
   Comparator comparator;
   std::vector<int32_t> conditionals;
+  int32_t reification = 0;
 
 public:
   PBConstraint(std::vector<PBLib::WeightedLit> const& literals,
@@ -27,9 +28,11 @@ public:
                Comparator comparator, int64_t bound);
   PBConstraint() : comparator(LEQ), leq(0), geq(0){};
   void addConditional(int32_t lit);
+  void setReification(int32_t lit);
   void addConditionals(std::vector<int32_t> lits);
   void clearConditionals();
   std::vector<int32_t> const& getConditionals() const;
+  const int32_t getReification() const;
 
   std::vector<PBLib::WeightedLit>& getWeightedLiterals();
   std::vector<PBLib::WeightedLit> const& getWeightedLiterals() const;
