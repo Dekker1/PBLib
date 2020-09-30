@@ -107,46 +107,56 @@ void BDD_Encoder::iterativeEncoding(const SimplePBConstraint& pbconstraint,
       continue;
     }
 
-    if (node.high == -true_lit && node.low == true_lit) {
-      node.result = -inputVars[index].lit;
-    } else {
+    if (reified) {
+      maxClauses -= 2;
       node.result = auxvars.getVariable();
+      // or low is true, or this var is true, or this node is false
+      formula.addClause(node.low, inputVars[index].lit, -node.result);
 
-      if (isBoth) {
-        maxClauses = maxClauses - 3;
-        if (node.high == true_lit)
-          maxClauses++;
-        else if (node.high == -true_lit)
-          formula.addClause(-node.result, -inputVars[index].lit);
-        else
-          formula.addClause(-node.result, -inputVars[index].lit, node.high);
-
-        if (node.low == true_lit)
-          maxClauses++;
-        else if (node.low == -true_lit)
-          formula.addClause(-node.result, inputVars[index].lit);
-        else
-          formula.addClause(-node.result, inputVars[index].lit, node.low);
-
-        if (node.high == true_lit || node.low == true_lit)
-          maxClauses++;
-        else if (node.high == -true_lit)
-          formula.addClause(-node.result, node.low);
-        else if (node.low == -true_lit)
-          formula.addClause(-node.result, node.high);
-        else
-          formula.addClause(-node.result, node.high, node.low);
+      // or high is true, or this var is false, or this node is false
+      formula.addClause(node.high, -inputVars[index].lit, -node.result);
+    } else {
+      if (node.high == -true_lit && node.low == true_lit) {
+        node.result = -inputVars[index].lit;
       } else {
-        if (node.low != true_lit) {
-          maxClauses--;
-          formula.addClause(node.low, -node.result);
-        }
+        node.result = auxvars.getVariable();
 
-        maxClauses--;
-        if (node.high == -true_lit)
-          formula.addClause(-inputVars[index].lit, -node.result);
-        else
-          formula.addClause(node.high, -inputVars[index].lit, -node.result);
+        if (isBoth) {
+          maxClauses = maxClauses - 3;
+          if (node.high == true_lit)
+            maxClauses++;
+          else if (node.high == -true_lit)
+            formula.addClause(-node.result, -inputVars[index].lit);
+          else
+            formula.addClause(-node.result, -inputVars[index].lit, node.high);
+
+          if (node.low == true_lit)
+            maxClauses++;
+          else if (node.low == -true_lit)
+            formula.addClause(-node.result, inputVars[index].lit);
+          else
+            formula.addClause(-node.result, inputVars[index].lit, node.low);
+
+          if (node.high == true_lit || node.low == true_lit)
+            maxClauses++;
+          else if (node.high == -true_lit)
+            formula.addClause(-node.result, node.low);
+          else if (node.low == -true_lit)
+            formula.addClause(-node.result, node.high);
+          else
+            formula.addClause(-node.result, node.high, node.low);
+        } else {
+          if (node.low != true_lit) {
+            maxClauses--;
+            formula.addClause(node.low, -node.result);
+          }
+
+          maxClauses--;
+          if (node.high == -true_lit)
+            formula.addClause(-inputVars[index].lit, -node.result);
+          else
+            formula.addClause(node.high, -inputVars[index].lit, -node.result);
+        }
       }
     }
 
