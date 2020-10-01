@@ -8,7 +8,7 @@ using namespace PBLib;
 using namespace std;
 template <class PBCon>
 void PreEncoder::init_and_normalize(PBCon const& pbconstraint,
-                                    ClauseDatabase& formula) {
+                                    ClauseDatabase& formula, int32_t reification) {
   literals = pbconstraint.getWeightedLiterals();
   comparator = pbconstraint.getComparator();
   max_sum = 0;
@@ -34,11 +34,10 @@ void PreEncoder::init_and_normalize(PBCon const& pbconstraint,
   leq += bound_offset;
   geq += bound_offset;
 
-  remove_lits_with_w_greater_leq_and_check_isamk(formula);
+  remove_lits_with_w_greater_leq_and_check_isamk(formula, reification);
 }
 
-void PreEncoder::remove_lits_with_w_greater_leq_and_check_isamk(
-    ClauseDatabase& formula) {
+void PreEncoder::remove_lits_with_w_greater_leq_and_check_isamk(ClauseDatabase& formula, int32_t reification) {
   isAMK = true;
   isAMKEqual = true;
   check_amk_equal = 0;
@@ -53,12 +52,16 @@ void PreEncoder::remove_lits_with_w_greater_leq_and_check_isamk(
     tmpWeight = literals[i].weight;
 
     if (tmpWeight > leq) {
-      formula.addClause(-literals[i].lit);
-      literals[i] = literals[literals.size() - 1];
-      literals.pop_back();
-      i--;
-      n--;
-      continue;
+      if (reification) {
+        formula.addClause(-literals[i].lit, -reification);
+      } else {
+        formula.addClause(-literals[i].lit);
+        literals[i] = literals[literals.size() - 1];
+        literals.pop_back();
+        i--;
+        n--;
+        continue;
+      }
     }
 
     max_sum += tmpWeight;
@@ -242,7 +245,7 @@ shared_ptr<IncSimplePBConstraint> PreEncoder::preEncodeIncPBConstraint(
 SimplePBConstraint PreEncoder::preEncodePBConstraint(
     const PBConstraint& pbconstraint, ClauseDatabase& formula) {
   formula.addConditionals(pbconstraint.getConditionals());
-  init_and_normalize(pbconstraint, formula);
+  init_and_normalize(pbconstraint, formula, pbconstraint.getReification());
   check_for_trivial_constraints(formula, pbconstraint.getReification());
   if (type == DONTCARE) {
     // we already encode this constraint and continue below
@@ -258,7 +261,7 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
 
       for (WeightedLit lit : literals) {
         formula.addClause(lit.lit, -pbconstraint.getReification());
-        clause.push_back(lit.lit);
+        clause.push_back(-lit.lit);
         stats->num_clause++;
       }
       clause.push_back(pbconstraint.getReification());
@@ -411,7 +414,7 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
     formula.getConditionals().pop_back();
 
   // TODO although probably we can use our pb reif trick for amo/amk too
-  if (pbconstraint.getReification()) {
+  if (type != DONTCARE && pbconstraint.getReification()) {
     type = PB;
   }
 

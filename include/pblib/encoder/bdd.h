@@ -40,6 +40,7 @@ private:
   std::map<std::tuple<int32_t, int32_t, int32_t>, int32_t> nodeHistory;
 
   int64_t k;
+  // TODO perhaps move to auxvarmanager to re-use between all encoders
   int32_t true_lit;
   bool reified = false;
 
