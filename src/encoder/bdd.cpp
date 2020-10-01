@@ -110,11 +110,32 @@ void BDD_Encoder::iterativeEncoding(const SimplePBConstraint& pbconstraint,
     if (reified) {
       maxClauses -= 2;
       node.result = auxvars.getVariable();
+
+      assert(node.low != -true_lit && "For LEQ, this shouldn't occur since removing variables cannot lead to UNSAT");
       // or low is true, or this var is true, or this node is false
+      // 4. (-s and -f) -> -x === s or f or -x (orig)
       formula.addClause(node.low, inputVars[index].lit, -node.result);
+      // formula.addClause(node.low, -node.result);
 
       // or high is true, or this var is false, or this node is false
+      // 2. (s and -t) -> -x === -s or t or -x (orig)
       formula.addClause(node.high, -inputVars[index].lit, -node.result);
+
+      // TODO apparently redundant (they are for "positive occurrence")
+      // // 3. (-s and f) -> x === s or -f or x
+      // formula.addClause(-node.low, inputVars[index].lit, node.result);
+
+      // // 1. (s and t) -> x === -s or -t or x
+      // formula.addClause(-node.high, -inputVars[index].lit, node.result);
+
+      if (isBoth) {
+        maxClauses-=1;
+        // 6. (-t and -f) -> -x === t or f or -x (orig)
+        formula.addClause(-node.result, node.high, node.low);
+
+        // 5. (t and f) -> x === -t or -f or x
+        // formula.addClause(node.result, -node.high, -node.low);
+      }
     } else {
       if (node.high == -true_lit && node.low == true_lit) {
         node.result = -inputVars[index].lit;
@@ -146,8 +167,12 @@ void BDD_Encoder::iterativeEncoding(const SimplePBConstraint& pbconstraint,
           else
             formula.addClause(-node.result, node.high, node.low);
         } else {
+          assert(node.low != -true_lit && "For LEQ, this shouldn't occur since removing variables cannot lead to UNSAT");
           if (node.low != true_lit) {
             maxClauses--;
+            // TODO not sure where this optimization comes form, but the logic seems to be:
+            // if x is true, then its false child must be true as well
+            // In other words, a positive decision at this node leads to SAT, so a negative decision should as well.
             formula.addClause(node.low, -node.result);
           }
 
@@ -212,7 +237,7 @@ int32_t BDD_Encoder::buildBDD(int index, int64_t currentsum, int64_t maxsum,
     } else {
       node = auxvars.getVariable();
 
-      // if low is not true, then if node then low
+      // if low is either 0-terminal or another now, then if node
       if (low != true_lit) formula.addClause(low, -node);
 
       if (high == -true_lit)
