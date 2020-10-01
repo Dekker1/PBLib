@@ -4,6 +4,10 @@ using namespace std;
 
 void SortingNetworks::encode(const SimplePBConstraint& pbconstraint,
                              ClauseDatabase& formula, AuxVarManager& auxvars) {
+  if (pbconstraint.getReification()) {
+    throw "PBLib: Reified context not support for SortingNetworks encoder";
+  }
+
   if (config->print_used_encodings)
     cout << "c encode with sorting networks" << endl;
 

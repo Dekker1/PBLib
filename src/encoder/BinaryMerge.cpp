@@ -137,6 +137,11 @@ void BinaryMerge::binary_merge(const SimplePBConstraint& constraint,
 
 void BinaryMerge::encode(const SimplePBConstraint& pbconstraint,
                          ClauseDatabase& formula, AuxVarManager& auxvars) {
+ 
+  if (pbconstraint.getReification()) {
+    throw "PBLib: Reified context not support for BinaryMerge encoder";
+  }
+
   if (config->print_used_encodings)
     cout << "c encode with binary merge encoding" << endl;
 

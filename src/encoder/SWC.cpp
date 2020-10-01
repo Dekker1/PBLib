@@ -5,6 +5,9 @@ using namespace std;
 
 void SWC_Encoder::encode(const SimplePBConstraint& pbconstraint,
                          ClauseDatabase& formula, AuxVarManager& auxvars) {
+  if (pbconstraint.getReification()) {
+    throw "PBLib: Reified context not support for SWC encoder";
+  }
   if (config->print_used_encodings) cout << "c encode with SWC" << endl;
 
   encode_intern(pbconstraint, formula, auxvars);

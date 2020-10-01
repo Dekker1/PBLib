@@ -335,6 +335,9 @@ void PB2CNF::encode(const PBConstraint& pbconstraint, ClauseDatabase& formula,
     }
   }
 
+  // TODO actually couldn't using an (e.g.) PB algorithm on an AMO/AMK
+  // constraint be beneficial too (and should thus be compared when selecting
+  // 'best' encoding)?
   switch (constraint.getType()) {
     case DONTCARE:
       break;
@@ -348,7 +351,7 @@ void PB2CNF::encode(const PBConstraint& pbconstraint, ClauseDatabase& formula,
       encode_pb(constraint, formula, auxVars);
       break;
     default:
-      assert(false && "this should never occure");
+      assert(false && "this should never occur");
   }
 }
 
@@ -520,6 +523,16 @@ bool PB2CNF::encodeWithBestEncoder(vector<Encoder*> encoders,
                                    ClauseDatabase& formula,
                                    AuxVarManager& auxVars) {
   if (encoders.size() == 0) return false;
+
+  // TODO now hard-code to use bdd, but should compare to the sum of multiple conditional pb constraints of other best encoders instead
+  if (constraint.getReification()) {
+    if (find(encoders.begin(), encoders.end(), &bdd_encoder) == encoders.end()) {
+      return false;
+    } else {
+      bdd_encoder.encode(constraint, formula, auxVars);
+      return true;
+    }
+  }
 
   Encoder* bestEncoder = encoders[0];
   int64_t bestValue = encoders[0]->encodingValue(constraint);

@@ -129,7 +129,7 @@ void BDD_Encoder::iterativeEncoding(const SimplePBConstraint& pbconstraint,
       // formula.addClause(-node.high, -inputVars[index].lit, node.result);
 
       if (isBoth) {
-        maxClauses-=1;
+        maxClauses--;
         // 6. (-t and -f) -> -x === t or f or -x (orig)
         formula.addClause(-node.result, node.high, node.low);
 

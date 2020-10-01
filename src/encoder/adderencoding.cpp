@@ -276,6 +276,11 @@ int PBLib::ld64(uint64_t x) {
 
 void AdderEncoding::encode(const SimplePBConstraint& pbconstraint,
                            ClauseDatabase& formula, AuxVarManager& auxvars) {
+
+  if (pbconstraint.getReification()) {
+    throw "PBLib: Reified context not support for AdderEncoding";
+  }
+
   if (config->print_used_encodings && !isInc)
     cout << "c encode with adder" << endl;
 
