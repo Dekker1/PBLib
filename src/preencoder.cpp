@@ -8,7 +8,8 @@ using namespace PBLib;
 using namespace std;
 template <class PBCon>
 void PreEncoder::init_and_normalize(PBCon const& pbconstraint,
-                                    ClauseDatabase& formula, int32_t reification) {
+                                    ClauseDatabase& formula,
+                                    int32_t reification) {
   literals = pbconstraint.getWeightedLiterals();
   comparator = pbconstraint.getComparator();
   max_sum = 0;
@@ -37,7 +38,8 @@ void PreEncoder::init_and_normalize(PBCon const& pbconstraint,
   remove_lits_with_w_greater_leq_and_check_isamk(formula, reification);
 }
 
-void PreEncoder::remove_lits_with_w_greater_leq_and_check_isamk(ClauseDatabase& formula, int32_t reification) {
+void PreEncoder::remove_lits_with_w_greater_leq_and_check_isamk(
+    ClauseDatabase& formula, int32_t reification) {
   isAMK = true;
   isAMKEqual = true;
   check_amk_equal = 0;
@@ -349,7 +351,25 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
     if (comparator == BOTH && geq <= 0)
       comparator = LEQ;  // since we know that all weights > 0
 
-    if (comparator == BOTH && geq == 1) {
+    // TODO why doesn't following optimization work for reified:
+    // if (pbconstraint.getReification()) {
+    //   // a or b or c or -r
+    //   for (WeightedLit lit : literals) {
+    //     // shouldn't add one;
+    //     formula.addClause(pbconstraint.getReification(), -lit.lit);
+    //     clause.push_back(lit.lit);
+    //   }
+    //   clause.push_back(-pbconstraint.getReification());
+    //   formula.addClause(clause);
+    //   stats->num_clause += literals.size() + 1;
+    // } else {
+    //   for (WeightedLit lit : literals) {
+    //     clause.push_back(lit.lit);
+    //   }
+    //   formula.addClause(clause);
+    //   stats->num_clause++;
+    // }
+    if (comparator == BOTH && geq == 1 && !pbconstraint.getReification()) {
       // >= 1 is a clause since all weights are > 0 ... we simply add this
       // clause and remove GEQ constraint
       comparator = LEQ;
@@ -361,7 +381,6 @@ SimplePBConstraint PreEncoder::preEncodePBConstraint(
       formula.addClause(clause);
 
       stats->num_clause++;
-      comparator = LEQ;
 
       // we have change the comparator so we can try to find new simplifications
       PBConstraint c(literals, LEQ, leq);
