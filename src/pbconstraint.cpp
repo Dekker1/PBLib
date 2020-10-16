@@ -106,13 +106,6 @@ bool PBConstraint::operator==(const PBConstraint& other) const { return false; }
 // TODO rewrite print functions ...
 
 void PBConstraint::print(bool errStream) const {
-  if (getN() == 0) {
-    if (errStream)
-      cerr << "TRUE" << endl;
-    else
-      cout << "TRUE" << endl;
-    return;
-  }
 
   if (conditionals.size() > 0) {
     if (errStream)
@@ -136,6 +129,13 @@ void PBConstraint::print(bool errStream) const {
   if (reification) {
     auto & stream = errStream ? cerr : cout;
     cerr << reification << " <-> " ;
+  }
+
+  if (getN() == 0) {
+    if (errStream)
+      cerr << "0";
+    else
+      cout << "0";
   }
 
   for (int i = 0; i < getN(); ++i) {
