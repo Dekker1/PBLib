@@ -111,7 +111,7 @@ void BDD_Encoder::iterativeEncoding(const SimplePBConstraint& pbconstraint,
       maxClauses -= 2;
       node.result = auxvars.getVariable();
 
-      assert(node.low != -true_lit && "For LEQ, this shouldn't occur since removing variables cannot lead to UNSAT");
+      assert(isBoth || node.low != -true_lit && "For LEQ, this shouldn't occur since removing variables cannot lead to UNSAT");
       // or low is true, or this var is true, or this node is false
       // 4. (-s and -f) -> -x === s or f or -x (orig)
       formula.addClause(node.low, inputVars[index].lit, -node.result);
