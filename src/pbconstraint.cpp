@@ -11,9 +11,7 @@ void PBConstraint::addConditionals(vector<int32_t> lits) {
   for (int32_t lit : lits) conditionals.push_back(lit);
 }
 
-void PBConstraint::setReification(int32_t lit) {
-  reification = lit;
-}
+void PBConstraint::setReification(int32_t lit) { reification = lit; }
 
 void PBConstraint::clearConditionals() { conditionals.clear(); }
 
@@ -21,9 +19,7 @@ const vector<int32_t>& PBConstraint::getConditionals() const {
   return conditionals;
 }
 
-const int32_t PBConstraint::getReification() const {
-  return reification;
-}
+const int32_t PBConstraint::getReification() const { return reification; }
 
 int PBConstraint::getN() const { return weighted_literals.size(); }
 
@@ -106,84 +102,45 @@ bool PBConstraint::operator==(const PBConstraint& other) const { return false; }
 // TODO rewrite print functions ...
 
 void PBConstraint::print(bool errStream) const {
+  auto& out = errStream ? cerr : cout;
 
   if (conditionals.size() > 0) {
-    if (errStream)
-      cerr << "[";
-    else
-      cout << "[";
+    out << "[";
 
-    for (int i = 0; i < conditionals.size(); ++i) {
-      if (errStream)
-        cerr << conditionals[i] << ",";
-      else
-        cout << conditionals[i] << ",";
+    for (int i = 0; i < conditionals.size()-1; ++i) {
+      out << conditionals[i] << ",";
     }
+    out << conditionals[conditionals.size()-1];
 
-    if (errStream)
-      cerr << "] => ";
-    else
-      cout << "] => ";
+    out << "] -> ";
   }
 
   if (reification) {
-    auto & stream = errStream ? cerr : cout;
-    cerr << reification << " <-> " ;
+    out << reification << " <-> ";
   }
 
   if (getN() == 0) {
-    if (errStream)
-      cerr << "0";
-    else
-      cout << "0";
+    out << "0";
   }
 
   for (int i = 0; i < getN(); ++i) {
-    if (i < getN() - 1) {
-      if (weighted_literals[i].lit < 0)
-        if (errStream)
-          cerr << weighted_literals[i].weight << " -x"
-               << -weighted_literals[i].lit << " +";
-        else
-          cout << weighted_literals[i].weight << " -x"
-               << -weighted_literals[i].lit << " +";
-      else if (errStream)
-        cerr << weighted_literals[i].weight << " x" << weighted_literals[i].lit
-             << " +";
-      else
-        cout << weighted_literals[i].weight << " x" << weighted_literals[i].lit
-             << " +";
+    if (weighted_literals[i].lit < 0) {
+      out << weighted_literals[i].weight << " -x" << -weighted_literals[i].lit;
     } else {
-      if (weighted_literals[getN() - 1].lit < 0)
-        if (errStream)
-          cerr << weighted_literals[getN() - 1].weight << " -x"
-               << -weighted_literals[getN() - 1].lit;
-        else
-          cout << weighted_literals[getN() - 1].weight << " -x"
-               << -weighted_literals[getN() - 1].lit;
-      else if (errStream)
-        cerr << weighted_literals[getN() - 1].weight << " x"
-             << weighted_literals[getN() - 1].lit;
-      else
-        cout << weighted_literals[getN() - 1].weight << " x"
-             << weighted_literals[getN() - 1].lit;
+      out << weighted_literals[i].weight << " x" << weighted_literals[i].lit;
+    }
+    if (i < getN() - 1) {
+      out << " +";
     }
   }
 
-  if (comparator == LEQ)
-    if (errStream)
-      cerr << " =< " << leq << endl;
-    else
-      cout << " =< " << leq << endl;
-  else if (comparator == GEQ)
-    if (errStream)
-      cerr << " >= " << geq << endl;
-    else
-      cout << " >= " << geq << endl;
-  else if (errStream)
-    cerr << " >= " << geq << " =< " << leq << endl;
-  else
-    cout << " >= " << geq << " =< " << leq << endl;
+  if (comparator == LEQ) {
+    out << " =< " << leq << endl;
+  } else if (comparator == GEQ) {
+    out << " >= " << geq << endl;
+  } else {
+    out << " >= " << geq << " =< " << leq << endl;
+  }
 }
 
 void PBConstraint::printGeq(bool errStream) const {
