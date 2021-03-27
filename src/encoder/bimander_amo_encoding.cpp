@@ -48,14 +48,19 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
                                           AuxVarManager& auxvars) {
   int n = literals.size();
 
-  if (config->bimander_m_is == BIMANDER_M_IS::FIXED)
+  if (config->bimander_m_is == BIMANDER_M_IS::FIXED) {
     m = config->bimander_m;
-  else if (config->bimander_m_is == BIMANDER_M_IS::N_HALF)
+  } else if (config->bimander_m_is == BIMANDER_M_IS::COMMANDER) {
+    m = 2;
+  } else if (config->bimander_m_is == BIMANDER_M_IS::BINARY) {
+    m = n;
+  } else if (config->bimander_m_is == BIMANDER_M_IS::N_HALF) {
     m = ceil((double)n / 2);
-  else if (config->bimander_m_is == BIMANDER_M_IS::N_SQRT)
+  } else if (config->bimander_m_is == BIMANDER_M_IS::N_SQRT) {
     m = ceil(sqrt((double)n));
-  else
+  } else {
     m = config->bimander_m;
+  }
 
   assert(m > 0);
   // create the m groups

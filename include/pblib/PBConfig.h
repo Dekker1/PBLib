@@ -23,7 +23,7 @@ struct statistic {
 };
 
 namespace BIMANDER_M_IS {
-enum BIMANDER_M_IS { N_HALF, N_SQRT, FIXED };
+enum BIMANDER_M_IS { N_HALF, N_SQRT, FIXED, COMMANDER, BINARY };
 };
 
 namespace AMO_ENCODER {
