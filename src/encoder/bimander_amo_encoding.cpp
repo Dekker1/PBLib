@@ -94,17 +94,53 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
 
   for (int i = 0; i < nBits; ++i) bits.push_back(auxvars.getVariable());
 
-  int gray_code;
-  int next_gray;
-  i = 0;
-  int index = -1;
-  for (; i < k; ++i) {
-    index++;
-    gray_code = i ^ (i >> 1);
-    i++;  // we skip the next binary string to use the redundancy
-    next_gray = i ^ (i >> 1);
-    for (int j = 0; j < nBits; ++j) {
-      if ((gray_code & (1 << j)) == (next_gray & (1 << j))) {
+  if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY) {
+    int offset = config->bimander_offset;
+    
+    for (size_t i = 0; i < m; i++) {  // for every group i
+      for (size_t h = 0; h < groups[i].size(); h++) {  // for every lit h in group i
+        for (size_t j = 0; j < bits.size(); j++) { // for every bit j
+          int k = i+offset;
+          
+          if (((k >> j) & 0x1) != 0U) {  // the jth bit of binary rep of i is 1
+            formula.addClause(-groups[i][h], bits[j]);
+          } else {
+            formula.addClause(-groups[i][h], -bits[j]);
+          }
+        }
+      }
+    }
+  } else {
+    // TODO offset
+    int gray_code;
+    int next_gray;
+    i = 0;
+    int index = -1;
+    for (; i < k; ++i) {
+      index++;
+      gray_code = i ^ (i >> 1);
+      i++;  // we skip the next binary string to use the redundancy
+      next_gray = i ^ (i >> 1);
+      for (int j = 0; j < nBits; ++j) {
+        if ((gray_code & (1 << j)) == (next_gray & (1 << j))) {
+          if ((gray_code & (1 << j)) != 0) {
+            for (int g = 0; g < groups[index].size(); ++g) {
+              formula.addClause(-groups[index][g], bits[j]);
+            }
+          } else {
+            for (int g = 0; g < groups[index].size(); ++g) {
+              formula.addClause(-groups[index][g], -bits[j]);
+            }
+          }
+        }
+        // else skip that bit since it is redundant
+      }
+    }
+
+    for (; i < two_pow_nbits; ++i) {
+      index++;
+      gray_code = i ^ (i >> 1);
+      for (int j = 0; j < nBits; ++j) {
         if ((gray_code & (1 << j)) != 0) {
           for (int g = 0; g < groups[index].size(); ++g) {
             formula.addClause(-groups[index][g], bits[j]);
@@ -115,26 +151,9 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
           }
         }
       }
-      // else skip that bit since it is redundant
     }
+    assert(index + 1 == groups.size());
   }
-
-  for (; i < two_pow_nbits; ++i) {
-    index++;
-    gray_code = i ^ (i >> 1);
-    for (int j = 0; j < nBits; ++j) {
-      if ((gray_code & (1 << j)) != 0) {
-        for (int g = 0; g < groups[index].size(); ++g) {
-          formula.addClause(-groups[index][g], bits[j]);
-        }
-      } else {
-        for (int g = 0; g < groups[index].size(); ++g) {
-          formula.addClause(-groups[index][g], -bits[j]);
-        }
-      }
-    }
-  }
-  assert(index + 1 == groups.size());
 }
 
 void Bimander_amo_encoding::encode(const SimplePBConstraint& pbconstraint,

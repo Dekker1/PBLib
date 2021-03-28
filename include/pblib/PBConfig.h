@@ -22,8 +22,13 @@ struct statistic {
   void printStatisticRelative();
 };
 
+// TODO why is this in its own namespace?
 namespace BIMANDER_M_IS {
 enum BIMANDER_M_IS { N_HALF, N_SQRT, FIXED, COMMANDER, BINARY };
+};
+
+namespace BIMANDER_AUX_PATTERN {
+enum BIMANDER_AUX_PATTERN { BINARY, GRAY };
 };
 
 namespace AMO_ENCODER {
@@ -54,7 +59,9 @@ public:
   AMK_ENCODER::PB2CNF_AMK_Encoder amk_encoder = AMK_ENCODER::BEST;
   AMO_ENCODER::PB2CNF_AMO_Encoder amo_encoder = AMO_ENCODER::BEST;
   BIMANDER_M_IS::BIMANDER_M_IS bimander_m_is = BIMANDER_M_IS::N_HALF;
+  BIMANDER_AUX_PATTERN::BIMANDER_AUX_PATTERN bimander_aux_pattern = BIMANDER_AUX_PATTERN::GRAY;
   int bimander_m = 3;
+  int bimander_offset = 0;
   int k_product_minimum_lit_count_for_splitting = 10;
   int k_product_k = 2;
   int commander_encoding_k = 3;
