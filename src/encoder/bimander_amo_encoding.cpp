@@ -1,6 +1,7 @@
 #include <pblib/encoder/bimander_amo_encoding.h>
 
 #include <cmath>
+#include <numeric>
 
 using namespace PBLib;
 using namespace std;
@@ -92,6 +93,7 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
     bits.push_back(auxvars.getVariable());
   }
 
+  std::vector<int> bit_balances(bits.size(), 0);
 
   if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY) {
     size_t offset = config->bimander_offset;
@@ -103,8 +105,10 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
           
           if (((k >> j) & 0x1) != 0U) {  // the jth bit of binary rep of i is 1
             formula.addClause(-groups[i][h], bits[j]);
+            bit_balances[j]++;
           } else {
             formula.addClause(-groups[i][h], -bits[j]);
+            bit_balances[j]--;
           }
         }
       }
@@ -129,10 +133,12 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
           if ((gray_code & (1 << j)) != 0) {
             for (int g = 0; g < groups[index].size(); ++g) {
               formula.addClause(-groups[index][g], bits[j]);
+              bit_balances[j]++;
             }
           } else {
             for (int g = 0; g < groups[index].size(); ++g) {
               formula.addClause(-groups[index][g], -bits[j]);
+              bit_balances[j]--;
             }
           }
         }
@@ -147,16 +153,19 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
         if ((gray_code & (1 << j)) != 0) {
           for (int g = 0; g < groups[index].size(); ++g) {
             formula.addClause(-groups[index][g], bits[j]);
+            bit_balances[j]++;
           }
         } else {
           for (int g = 0; g < groups[index].size(); ++g) {
             formula.addClause(-groups[index][g], -bits[j]);
+            bit_balances[j]--;
           }
         }
       }
     }
     assert(index + 1 == groups.size());
   }
+  _stats->totalBitBalances.push_back(std::accumulate(bit_balances.begin(), bit_balances.end(), 0));
 }
 
 void Bimander_amo_encoding::encode(const SimplePBConstraint& pbconstraint,
