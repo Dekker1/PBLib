@@ -25,14 +25,15 @@ int64_t Bimander_amo_encoding::encodingValue(
   int m = config->bimander_m;
   int n = pbconstraint.getN();
 
-  if (config->bimander_m_is == BIMANDER_M_IS::FIXED)
+  if (config->bimander_m_is == BIMANDER_M_IS::FIXED) {
     m = config->bimander_m;
-  else if (config->bimander_m_is == BIMANDER_M_IS::N_HALF)
+  } else if (config->bimander_m_is == BIMANDER_M_IS::N_HALF) {
     m = ceil((double)n / 2);
-  else if (config->bimander_m_is == BIMANDER_M_IS::N_SQRT)
+  } else if (config->bimander_m_is == BIMANDER_M_IS::N_SQRT) {
     m = ceil(sqrt((double)n));
-  else
+  } else {
     m = config->bimander_m;
+}
 
   int64_t clauses =
       ceil((double)(n * n) / (double)(2 * m)) + n * ceil(log2(m)) -
@@ -82,25 +83,23 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
   assert(m == groups.size());
   assert(i == literals.size());
 
-  for (int i = 0; i < groups.size(); ++i) {
-    naive_amo_encoder.encode_intern(groups[i], formula);
+  for (auto & group : groups) {
+    naive_amo_encoder.encode_intern(group, formula);
   }
 
   bits.clear();
-  nBits = ceil(log2(m));
-  two_pow_nbits = pow(2, nBits);
-  k = (two_pow_nbits - m) *
-      2;  // k is the number of literals that share a bit because of redundancy
+  for (int i = 0; i < ceil(log2(m)); ++i) {
+    bits.push_back(auxvars.getVariable());
+  }
 
-  for (int i = 0; i < nBits; ++i) bits.push_back(auxvars.getVariable());
 
   if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY) {
-    int offset = config->bimander_offset;
+    size_t offset = config->bimander_offset;
     
     for (size_t i = 0; i < m; i++) {  // for every group i
       for (size_t h = 0; h < groups[i].size(); h++) {  // for every lit h in group i
         for (size_t j = 0; j < bits.size(); j++) { // for every bit j
-          int k = i+offset;
+          auto k = i+offset;
           
           if (((k >> j) & 0x1) != 0U) {  // the jth bit of binary rep of i is 1
             formula.addClause(-groups[i][h], bits[j]);
@@ -111,6 +110,10 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
       }
     }
   } else {
+    bits.clear();
+    nBits = ceil(log2(m));
+    two_pow_nbits = pow(2, nBits);
+    k = (two_pow_nbits - m) * 2;  // k is the number of literals that share a bit because of redundancy
     // TODO offset
     int gray_code;
     int next_gray;
