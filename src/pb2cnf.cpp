@@ -486,8 +486,6 @@ void PB2CNF::encode_with_card(SimplePBConstraint& constraint,
   card_encoder.encode(constraint, formula, auxVars);
 }
 
-PB2CNF::PB2CNF() : PB2CNF(basic_default_config, nullptr) {}
-
 PB2CNF::PB2CNF(PBConfig& config, statistic* _stats)
     : tmpFormula(config),
       pre_encoder(config, _stats),
@@ -499,23 +497,16 @@ PB2CNF::PB2CNF(PBConfig& config, statistic* _stats)
       k_product_encoer(config),
       commander_amo_encoding(config),
       naive_amo_encoder(config),
-      bimander_amo_encoding(config),
+      bimander_amo_encoding(config, _stats),
       bdd_sec_amo(config),
       card_encoder(config),
       sorting_networks(config),
       binary_merge(config),
       swc_encoder(config),
-      stats(_stats) {
-  if (stats == 0) {
-    stats = new statistic;
-    private_stats = true;
-  } else {
-    private_stats = false;
-  }
-}
+      stats(_stats) {}
 
 PB2CNF::~PB2CNF() {
-  if (private_stats) delete stats;
+  delete stats;
 }
 
 bool PB2CNF::encodeWithBestEncoder(vector<Encoder*> encoders,

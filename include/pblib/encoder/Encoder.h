@@ -8,10 +8,11 @@
 class Encoder {
 protected:
   PBConfig config;
+  statistic* _stats;
   int64_t valueFunction(int64_t number_of_clauses, int64_t numer_of_auxvars);
 
 public:
-  Encoder(PBConfig& config);
+  Encoder(PBConfig& config, statistic* stats=nullptr);
 
   void virtual encode(const SimplePBConstraint& pbconstraint,
                       ClauseDatabase& formula, AuxVarManager& auxvars) = 0;

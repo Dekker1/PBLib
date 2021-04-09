@@ -15,4 +15,4 @@ int64_t Encoder::encodingValue(
   return -1;
 }
 
-Encoder::Encoder(PBConfig& config) : config(config) {}
+Encoder::Encoder(PBConfig& config, statistic* stats) : config(config), _stats(stats) {}

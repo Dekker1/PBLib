@@ -45,8 +45,6 @@ private:
   SortingNetworks sorting_networks;
   BinaryMerge binary_merge;
   SWC_Encoder swc_encoder;
-  statistic* stats;
-  bool private_stats;
 
   PB2CNF(const PB2CNF& other) = delete;
   virtual bool operator==(const PB2CNF& other) const = delete;
@@ -95,7 +93,7 @@ private:
 
 public:
   //     PB2CNF(PBConfig & config);
-  PB2CNF(PBConfig& config, statistic* stats = 0);
+  PB2CNF(PBConfig& config, statistic* _stats = new statistic);
   PB2CNF();
   virtual ~PB2CNF();
 
@@ -124,6 +122,7 @@ public:
               AuxVarManager& auxVars);
   void encodeIncInital(IncPBConstraint& incPbconstraint,
                        ClauseDatabase& formula, AuxVarManager& auxVars);
+  statistic* stats;
 };
 
 #endif  // PB2CNF_H

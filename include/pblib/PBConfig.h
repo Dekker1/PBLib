@@ -1,6 +1,7 @@
 #ifndef PBCONFIG_H
 #define PBCONFIG_H
 
+#include <vector>
 #include <cstdint>
 #include <memory>
 #include <set>
@@ -17,6 +18,7 @@ struct statistic {
   int num_amo = 0;
   int num_amk = 0;
   int num_pb = 0;
+  std::vector<int> totalBitBalances;
 
   void printStatistic();
   void printStatisticRelative();

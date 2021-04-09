@@ -32,8 +32,8 @@ public:
               AuxVarManager& auxvars);
   int64_t encodingValue(const SimplePBConstraint& pbconstraint);
 
-  Bimander_amo_encoding(PBConfig& config)
-      : Encoder(config), naive_amo_encoder(config) {}
+  Bimander_amo_encoding(PBConfig& config, statistic* stats)
+      : Encoder(config, stats), naive_amo_encoder(config) {}
 
   virtual ~Bimander_amo_encoding() = default;
 };
