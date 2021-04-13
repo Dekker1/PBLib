@@ -165,7 +165,7 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
     }
     assert(index + 1 == groups.size());
   }
-  _stats->totalBitBalances.push_back(std::accumulate(bit_balances.begin(), bit_balances.end(), 0));
+  _stats->totalBitBalances.push_back(std::accumulate(bit_balances.begin(), bit_balances.end(), 0, [] (int x, int y) {return x + std::abs(y);}));
 }
 
 void Bimander_amo_encoding::encode(const SimplePBConstraint& pbconstraint,
