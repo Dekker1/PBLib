@@ -95,15 +95,15 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
 
   std::vector<int> bit_balances(bits.size(), 0);
 
-  if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY) {
+  if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY || (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::GRAY && config->bimander_offset != -2)) {
     size_t offset = config->bimander_offset;
-    
+
     for (size_t i = 0; i < m; i++) {  // for every group i
+      size_t k = i+offset;
+      size_t bit_pattern = config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY ? k : k ^ (k >> 1);
       for (size_t h = 0; h < groups[i].size(); h++) {  // for every lit h in group i
         for (size_t j = 0; j < bits.size(); j++) { // for every bit j
-          auto k = i+offset;
-          
-          if (((k >> j) & 0x1) != 0U) {  // the jth bit of binary rep of i is 1
+          if (((bit_pattern >> j) & 0x1) != 0U) {  // the jth bit of binary rep of i is 1
             formula.addClause(-groups[i][h], bits[j]);
             bit_balances[j]++;
           } else {
@@ -113,12 +113,13 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
         }
       }
     }
-  } else {
+  } else { // offset = -2; spread/gray pattern
+    // TODO binary pattern
+    // TODO instead of skipping, redundantly add the groups 
     bits.clear();
     nBits = ceil(log2(m));
     two_pow_nbits = pow(2, nBits);
     k = (two_pow_nbits - m) * 2;  // k is the number of literals that share a bit because of redundancy
-    // TODO offset
     int gray_code;
     int next_gray;
     i = 0;
