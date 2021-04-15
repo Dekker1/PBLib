@@ -64,6 +64,7 @@ public:
   BIMANDER_AUX_PATTERN::BIMANDER_AUX_PATTERN bimander_aux_pattern = BIMANDER_AUX_PATTERN::GRAY;
   int bimander_m = 3;
   int bimander_offset = 0;
+  bool bimander_enforce_aux_var_domain = false;
   int k_product_minimum_lit_count_for_splitting = 10;
   int k_product_k = 2;
   int commander_encoding_k = 3;

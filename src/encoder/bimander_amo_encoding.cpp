@@ -92,6 +92,7 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
   for (int i = 0; i < ceil(log2(m)); ++i) {
     bits.push_back(auxvars.getVariable());
   }
+  two_pow_nbits = pow(2, bits.size());
 
   std::vector<int> bit_balances(bits.size(), 0);
 
@@ -113,12 +114,52 @@ void Bimander_amo_encoding::encode_intern(vector<Lit>& literals,
         }
       }
     }
+    // lex_geq(c,x) = c >= x =  forall (i in index_set(c) where not c[i]) (not x[i] \/ exists (j in index_set(c) where j < i /\ c[j]) (not x[j]))
+    if (config->bimander_aux_pattern == BIMANDER_AUX_PATTERN::BINARY && config->bimander_enforce_aux_var_domain) {
+      size_t lb = offset;
+      size_t ub = m + offset;
+
+      // lex_leq(c,x) = c <= x =  forall (i in index_set(c) where c[i]) (x[i] \/ exists (j in index_set(c) where j < i /\ not c[j]) (x[j]))
+                              // for every i=1 in c, either there's a 1 at the same position, or a 1 at a higher significance j in x where not c[j]
+      if (lb > 0) {
+        for (size_t i = 0; i < bits.size(); i++) {
+          if (((lb >> i) & 0x1) != 0U) { // for i in where c_i == 1
+            std::vector<int> clause;
+            clause.push_back(bits[i]); // x[i]
+            for (size_t j = i+1; j < bits.size(); j++) {
+
+              if (((lb >> j) & 0x1) == 0U) { // for j<i in where c_j == 0
+                clause.push_back(bits[j]); // x[j]
+              }
+            }
+            formula.addClause(clause);
+          }
+        }
+      }
+
+      // lex_geq(c,x) = c >= x =  forall (i in index_set(c) where not c[i]) (not x[i] \/ exists (j in index_set(c) where j < i /\ c[j]) (not x[j]))
+      if (ub < two_pow_nbits) {
+        for (size_t i = 0; i < bits.size(); i++) {
+
+          if (((ub >> i) & 0x1) == 0U) { // for i in where not c_i
+            std::vector<int> clause;
+            clause.push_back(-bits[i]); // not x[i]
+            for (size_t j = i+1; j < bits.size(); j++) {
+
+              if (((ub >> j) & 0x1) != 0U) { // for j<i in where c_j == 1
+                clause.push_back(-bits[j]); // not x[j]
+              }
+            }
+            formula.addClause(clause);
+          }
+        }
+      }
+    }
   } else { // offset = -2; spread/gray pattern
     // TODO binary pattern
     // TODO instead of skipping, redundantly add the groups 
     bits.clear();
     nBits = ceil(log2(m));
-    two_pow_nbits = pow(2, nBits);
     k = (two_pow_nbits - m) * 2;  // k is the number of literals that share a bit because of redundancy
     int gray_code;
     int next_gray;
